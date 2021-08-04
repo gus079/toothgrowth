@@ -1,0 +1,66 @@
+---
+title: "Simulation Exercise"
+author: "GS"
+date: "4/8/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE, comment='', message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background
+In this project you will investigate the exponential distribution in R and compare it with the Central Limit Theorem. The exponential distribution can be simulated in R with rexp(n, lambda) where lambda is the rate parameter. The mean of exponential distribution is 1/lambda and the standard deviation is also 1/lambda. Set lambda = 0.2 for all of the simulations. You will investigate the distribution of averages of 40 exponentials. Note that you will need to do a thousand simulations.
+
+
+```{r, message=FALSE}
+library(tidyverse)
+library(tinytex)
+theme_set(theme_bw())
+```
+
+## Simulations
+Setting lambda y exponentials
+```{r}
+set.seed(2021) #for reproducibility
+
+lambda = .2
+expo = 40
+
+sim_means = NULL
+for (i in 1 : 1000) sim_means = c(sim_means, mean(rexp(expo, lambda)))
+```
+
+## Theoretical mean vs Sample mean
+Sample mean (from the simulation)
+```{r}
+print(paste('The sample mean is ', round(mean(sim_means), 4)))
+
+print(paste('The theoretical mean is ', 1/lambda))
+
+mean_dif <- abs(mean(sim_means) - (1/lambda))
+print(paste('The mean difference is ', round(mean_dif, 4)))
+```
+## Theoretical variance vs Sample variance
+```{r}
+print(paste('The sample variance is ', round(var(sim_means), 4)))
+
+print(paste('The theoretical variance is ', (lambda * sqrt(expo))^-2))
+
+var_dif <- var(sim_means) - (lambda * sqrt(expo))^-2
+print(paste('The variance difference is ', round(var_dif, 4)))
+```
+```{r}
+ggplot(data.frame(y=sim_means), aes(x=y)) +
+  geom_histogram(aes(y=..density..), binwidth=0.2, fill="lightblue",
+                 color="black") +
+  stat_function(fun=dnorm, args=list(mean=1/lambda,
+                                    sd=(lambda*sqrt(expo))^-1), size=2) +
+  xlab('Mean') + 
+  ggtitle('Simulations')
+```
+
+```{r}
+sessionInfo()
+```
+

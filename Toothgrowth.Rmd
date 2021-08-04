@@ -1,0 +1,152 @@
+
+---
+title: "Exercise part 2 (Toothgrowth)"
+author: "GS"
+date: "4/8/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment='', message=FALSE)
+```
+```{r}
+library(tidyverse)
+library(ggpubr)
+library(tinytex)
+theme_set(theme_bw())
+```
+
+
+# The Effect of Vitamin C on Tooth Growth in Guinea Pigs
+
+## Description
+The response is the length of odontoblasts (cells responsible for tooth growth) in 60 guinea pigs. Each animal received one of three dose levels of vitamin C (0.5, 1, and 2 mg/day) by one of two delivery methods, orange juice or ascorbic acid (a form of vitamin C and coded as VC).
+
+I will compare the guinea tooth growth by supplement and dose. 
+Firstly, I will do some basic  EDA and then I will do some comparisons 
+
+## Loading datset
+```{r}
+data(ToothGrowth)
+tg <- ToothGrowth
+```
+
+## Exploratory data analysis
+```{r}
+glimpse(tg)
+```
+
+```{r}
+ggplot(tg, aes(x=factor(dose), y=len, fill = supp)) +
+  geom_boxplot() +
+  facet_grid(.~supp) +
+  ggtitle('Guinea pig tooth length by dosage for each type of supplement') + 
+  xlab('Dose (mg/day)') + 
+  ylab('Tooth Length') + 
+  theme(legend.position = 'none') + 
+  scale_fill_viridis_d()
+```
+The box plots seem to show, increasing the dosage increases the tooth growth. 
+Orange juice seem to do it better in lower dose but at high doses does not seem to be a diference.
+
+Checking if data is normally distributed
+```{r}
+norm.test <- shapiro.test(tg$len)
+
+norm.test.group <- tg %>% 
+  group_by(supp) %>% 
+  summarize(n = n(),
+            shapiro = shapiro.test(len)$p.value)
+```
+```{r, echo=FALSE}
+print(paste('Tha variable len is normally distributed, p-value: ', round(norm.test$p.value, 4)))
+print(paste('Tha variable len subset QJ is not normally distributed, p-value: ', round(norm.test.group[1,3], 4)))
+print(paste('Tha variable len subset VC is normally distributed, p-value: ', round(norm.test.group[2,3], 4)))
+```
+
+## Results
+Hypothesis testing comparing tooth growth by type of supplement
+
+H0 = No difference between groups (mean difference equal to 0)
+
+H1 = Groups are different (means difference not equal to 0)
+```{r}
+hypo_1<-t.test(len ~ supp, data = tg)
+```
+Interpretation:
+
+- p.value: 0.06063 (greater than 0.05)
+
+- 95%CI: includes 0 [-0.1710 - 7.5710]
+
+- We cannot reject the null hypothesis (H0)
+
+### Graphical comparisons of the 3 doses in term of len (Kruskall - Wallis test)
+
+```{r, warning=FALSE}
+g <- ggboxplot(tg, x = "dose", y = "len",
+          color = "dose", palette =c("#00AFBB", "#E7B800", "#FC4E07"),
+          shape = "dose")
+
+my_comparisons <- list( c("0.5", "1"), c("1", "2"), c("0.5", "2") )
+g + stat_compare_means(comparisons = my_comparisons) + 
+  stat_compare_means(label.y = 50) 
+```
+Interpretation:
+
+- H0: all groups are equal
+
+- H1: at least one group is diferrent
+
+### Comparison of different doses
+Dose: 0.5mg/day
+```{r}
+hypo_2<-t.test(len ~ supp, data = subset(tg, dose == 0.5))
+```
+Interpretation:
+
+- p.value: 0.006359 (lower than 0.05)
+
+- 95%CI: does not include 0 [1.7190 - 8.7809]
+
+- We reject the null hypothesis (H0) of equality
+
+
+Dose: 1mg/day
+```{r}
+hypo_3<-t.test(len ~ supp, data = subset(tg, dose == 1))
+```
+Interpretation:
+
+- p.value: 0.001038 (lower than 0.05)
+
+- 95%CI: does not include 0 [2.8021 - 9.0578]
+
+- We reject the null hypothesis (H0) of equality
+
+
+Dose: 2mg/day
+```{r}
+hypo_4<-t.test(len ~ supp, data = subset(tg, dose == 2))
+```
+Interpretation:
+
+- p.value: 0.9639 (greater than 0.05)
+
+- 95%CI: does not include 0 [-3.7980 - 3.6380]
+
+- We cannot reject the null hypothesis (H0) of equality
+
+# CONCLUSIONS 
+Overall, orange juice (OJ) produce the same amount of toth grwoth than ascorbic acid (AC).
+
+By dosages, OJ produces more tooth growth than ascorbic acid AC for dosages of 0.5mg/day & 1.0mg/day and OJ and AC produces the same amount of tooth growth for dose og 2.0 mg/day. 
+
+Assumption: no other variable are influencing the tooth growth (eg.feeding)
+
+```{r}
+sessionInfo()
+```
+
+
+
